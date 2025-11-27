@@ -206,21 +206,46 @@ def analyze_wav_3d(wav_path, center_freq=1500, output_html='data/05_3d_corkscrew
             var gd = document.getElementsByClassName('plotly-graph-div')[0];
             if (!gd) return;
             
-            // Add a vertical plane at the current time
-            var shapes = [];
-            if (currentTime > 0 && currentTime < audioDuration) {{
-                shapes.push({{
+            // Create a vertical plane (curtain) at the current playback time
+            var update = {{
+                x: [[currentTime, currentTime, currentTime, currentTime]],
+                y: [[-1, -1, 1, 1]],
+                z: [[-1, 1, -1, 1]],
+                i: [[0, 0]],
+                j: [[1, 2]],
+                k: [[2, 3]],
+            }};
+            
+            // Check if playback plane already exists
+            var planeExists = false;
+            if (gd.data) {{
+                for (var i = 0; i < gd.data.length; i++) {{
+                    if (gd.data[i].name === 'Playback Position') {{
+                        planeExists = true;
+                        // Update existing plane
+                        Plotly.restyle(gd, update, i);
+                        break;
+                    }}
+                }}
+            }}
+            
+            // Add plane if it doesn't exist
+            if (!planeExists) {{
+                var playbackPlane = {{
                     type: 'mesh3d',
                     x: [currentTime, currentTime, currentTime, currentTime],
                     y: [-1, -1, 1, 1],
                     z: [-1, 1, -1, 1],
-                    i: [0, 0, 1],
-                    j: [1, 2, 2],
-                    k: [2, 3, 3],
-                    opacity: 0.3,
-                    color: 'red',
-                    name: 'Playback Position'
-                }});
+                    i: [0, 0],
+                    j: [1, 2],
+                    k: [2, 3],
+                    opacity: 0.5,
+                    color: '#e74c3c',
+                    name: 'Playback Position',
+                    hoverinfo: 'skip',
+                    showlegend: false
+                }};
+                Plotly.addTraces(gd, playbackPlane);
             }}
         }}
 
