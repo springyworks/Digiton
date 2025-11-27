@@ -17,6 +17,10 @@
         a:hover { text-decoration: underline; }
         .tag { display: inline-block; background: #eee; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; color: #666; margin-left: 10px; }
         .img-preview { max-width: 100%; height: auto; margin-top: 10px; border-radius: 4px; border: 1px solid #eee; }
+        .audio-controls { margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; }
+        .play-btn { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; margin-right: 5px; }
+        .play-btn:hover { background: #2980b9; }
+        .audio-info { font-size: 12px; color: #666; margin-top: 5px; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -35,26 +39,93 @@
     <div class="card">
         <a href="01_spin_digiton_modem.png">Spin Modem Reference</a> <span class="tag">Image</span>
         <p>Spectrogram and frequency demodulation of the reference modem implementation.</p>
+        <div class="audio-controls">
+            <button class="play-btn" onclick="toggleAudio('audio1', this)">▶️ Play Audio</button>
+            <audio id="audio1" src="01_spin_digiton_modem.wav" preload="metadata"></audio>
+            <div class="audio-info" id="info1">Click to hear the modem signal</div>
+        </div>
         <img src="01_spin_digiton_modem.png" class="img-preview" alt="Modem Reference">
     </div>
 
     <div class="card">
         <a href="02_digiton_chat_spin.png">Chat Simulation</a> <span class="tag">Image</span>
         <p>Standard chat sequence between Master, Alice, and Bob.</p>
+        <div class="audio-controls">
+            <button class="play-btn" onclick="toggleAudio('audio2', this)">▶️ Play Audio</button>
+            <audio id="audio2" src="02_digiton_chat_spin.wav" preload="metadata"></audio>
+            <div class="audio-info" id="info2">Click to hear the chat sequence</div>
+        </div>
         <img src="02_digiton_chat_spin.png" class="img-preview" alt="Chat Simulation">
     </div>
 
     <div class="card">
         <a href="03_digiton_adaptive_spin.png">Adaptive Speed</a> <span class="tag">Image</span>
         <p>Demonstration of speed throttling (Slow Pings vs Fast Bursts).</p>
+        <div class="audio-controls">
+            <button class="play-btn" onclick="toggleAudio('audio3', this)">▶️ Play Audio</button>
+            <audio id="audio3" src="03_digiton_adaptive_spin.wav" preload="metadata"></audio>
+            <div class="audio-info" id="info3">Click to hear adaptive speed</div>
+        </div>
         <img src="03_digiton_adaptive_spin.png" class="img-preview" alt="Adaptive Speed">
     </div>
 
     <div class="card">
         <a href="04_digiton_party_mix_spin.png">Party Mix</a> <span class="tag">Image</span>
         <p>Mixed environment with weak/slow signals and strong/fast signals.</p>
+        <div class="audio-controls">
+            <button class="play-btn" onclick="toggleAudio('audio4', this)">▶️ Play Audio</button>
+            <audio id="audio4" src="04_digiton_party_mix_spin.wav" preload="metadata"></audio>
+            <div class="audio-info" id="info4">Click to hear the party mix</div>
+        </div>
         <img src="04_digiton_party_mix_spin.png" class="img-preview" alt="Party Mix">
     </div>
+
+    <script>
+        function toggleAudio(audioId, btn) {
+            var audio = document.getElementById(audioId);
+            var info = document.getElementById('info' + audioId.slice(-1));
+            
+            // Stop all other audio first
+            document.querySelectorAll('audio').forEach(function(a) {
+                if (a.id !== audioId && !a.paused) {
+                    a.pause();
+                    a.currentTime = 0;
+                }
+            });
+            
+            // Reset all buttons
+            document.querySelectorAll('.play-btn').forEach(function(b) {
+                if (b !== btn) {
+                    b.textContent = '▶️ Play Audio';
+                }
+            });
+            
+            if (audio.paused) {
+                audio.play();
+                btn.textContent = '⏸️ Pause';
+                updateTime();
+            } else {
+                audio.pause();
+                btn.textContent = '▶️ Play Audio';
+            }
+            
+            function updateTime() {
+                if (!audio.paused) {
+                    var current = audio.currentTime.toFixed(1);
+                    var duration = audio.duration.toFixed(1);
+                    info.textContent = current + 's / ' + duration + 's';
+                    requestAnimationFrame(updateTime);
+                } else {
+                    info.textContent = 'Click to hear the signal';
+                }
+            }
+            
+            audio.onended = function() {
+                btn.textContent = '▶️ Play Audio';
+                info.textContent = 'Click to hear the signal';
+            };
+        }
+    </script>
 
     <footer style="margin-top: 40px; color: #7f8c8d; font-size: 0.9em; border-top: 1px solid #eee; padding-top: 20px;">
         <p>Generated by Digiton Protocol Simulator.</p>
