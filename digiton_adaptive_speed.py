@@ -119,6 +119,7 @@ def simulate_adaptive_speed():
     plt.plot(t, noisy_signal, 'k', linewidth=0.5, alpha=0.7)
     plt.title("Adaptive Speed Spin Digiton (Time Domain)")
     plt.ylabel("Amplitude")
+    plt.xlim(0, cycle_duration)
     plt.grid(True, alpha=0.3)
     
     # Draw Slot Boundaries
@@ -129,6 +130,8 @@ def simulate_adaptive_speed():
     f, t_spec, Sxx = signal.spectrogram(noisy_signal, SAMPLE_RATE, nperseg=128, noverlap=64)
     plt.pcolormesh(t_spec, f, 10 * np.log10(Sxx + 1e-10), shading='gouraud', cmap='inferno')
     plt.ylabel('Frequency [Hz]')
+    plt.xlabel('Time (s)')
+    plt.xlim(0, cycle_duration)
     plt.ylim(1000, 2000)
     plt.title("Spectrogram (Notice High Speed Data Bursts)")
     plt.colorbar(label='dB')

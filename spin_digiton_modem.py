@@ -151,6 +151,7 @@ def simulate_spin_chat():
     plt.plot(t, rx_signal, 'k', alpha=0.7, linewidth=0.5)
     plt.title("Spin Digiton Chat (Time Domain)")
     plt.ylabel("Amplitude")
+    plt.xlim(0, duration)
     plt.grid(True, alpha=0.3)
     
     # 2. Spectrogram
@@ -158,6 +159,7 @@ def simulate_spin_chat():
     f, t_spec, Sxx = signal.spectrogram(rx_signal, SAMPLE_RATE, nperseg=256, noverlap=128)
     plt.pcolormesh(t_spec, f, 10 * np.log10(Sxx + 1e-10), shading='gouraud', cmap='inferno')
     plt.ylabel('Frequency [Hz]')
+    plt.xlim(0, duration)
     plt.ylim(1000, 2000) # Zoom in on 1500Hz +/- 500
     plt.title("Spectrogram (Notice Frequency Shifts)")
     plt.colorbar(label='dB')
@@ -177,6 +179,7 @@ def simulate_spin_chat():
     plt.axhline(SPIN_OFFSET, color='g', linestyle='--', label='Right Spin (+200)')
     plt.axhline(-SPIN_OFFSET, color='r', linestyle='--', label='Left Spin (-200)')
     plt.axhline(0, color='k', alpha=0.3)
+    plt.xlim(0, duration)
     plt.ylim(-400, 400)
     plt.ylabel("Freq Offset (Hz)")
     plt.xlabel("Time (s)")

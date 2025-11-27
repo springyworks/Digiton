@@ -103,6 +103,7 @@ def simulate_chat_sequence():
     plt.plot(t, signal_arr, 'k', linewidth=0.5)
     plt.title("Spin Digiton Chat Sequence (Time Domain)")
     plt.ylabel("Amplitude")
+    plt.xlim(0, total_time)
     plt.grid(True, alpha=0.3)
     
     # Draw Slot Boundaries
@@ -113,6 +114,8 @@ def simulate_chat_sequence():
     f, t_spec, Sxx = signal.spectrogram(signal_arr, SAMPLE_RATE, nperseg=256, noverlap=128)
     plt.pcolormesh(t_spec, f, 10 * np.log10(Sxx + 1e-10), shading='gouraud', cmap='inferno')
     plt.ylabel('Frequency [Hz]')
+    plt.xlabel('Time (s)')
+    plt.xlim(0, total_time)
     plt.ylim(1000, 2000)
     plt.title("Spectrogram (Showing Spin/Frequency Shifts)")
     plt.colorbar(label='dB')

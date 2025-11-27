@@ -132,6 +132,7 @@ def simulate_party_mix():
     plt.plot(t, sig_noisy, 'k', linewidth=0.5, alpha=0.7)
     plt.title("Party Mix: Weak/Slow Alice vs Strong/Fast Bob")
     plt.ylabel("Amplitude")
+    plt.xlim(0, total_time)
     plt.grid(True, alpha=0.3)
     
     # Draw Slot Boundaries
@@ -142,6 +143,8 @@ def simulate_party_mix():
     f, t_spec, Sxx = signal.spectrogram(sig_noisy, SAMPLE_RATE, nperseg=256, noverlap=128)
     plt.pcolormesh(t_spec, f, 10 * np.log10(Sxx + 1e-10), shading='gouraud', cmap='inferno')
     plt.ylabel('Frequency [Hz]')
+    plt.xlabel('Time (s)')
+    plt.xlim(0, total_time)
     plt.ylim(1000, 2000)
     plt.title("Spectrogram (Notice Alice's Faint Pulses vs Bob's Bright Bursts)")
     plt.colorbar(label='dB')
