@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+
+# Data
+*.wav
+*.png
+data/*.wav
+data/*.png
+!data/.gitkeep
+
+# VS Code
+.vscode/
