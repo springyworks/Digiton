@@ -260,9 +260,19 @@ def analyze_wav_3d(wav_path, center_freq=1500, output_html='data/05_3d_corkscrew
             }}
         }}, 100);
 
+        var lastSeekTime = 0;
+        var seekDebounceMs = 500; // Minimum 500ms between seeks
+        
         function setupClickSeek(gd) {{
             gd.on('plotly_click', function(data) {{
                 if (!seekMode) return;
+                
+                // Debounce: prevent rapid-fire seeks during click-hold
+                var now = Date.now();
+                if (now - lastSeekTime < seekDebounceMs) {{
+                    return; // Ignore this click
+                }}
+                lastSeekTime = now;
                 
                 if (data.points && data.points.length > 0) {{
                     var point = data.points[0];
