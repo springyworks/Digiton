@@ -117,10 +117,14 @@ def analyze_wav_3d(wav_path, center_freq=1500, output_html='data/05_3d_corkscrew
         .nav a:hover {{ text-decoration: underline; }}
         .nav span {{ color: #6c757d; margin: 0 10px; }}
         .nav .current {{ color: #2c3e50; font-weight: bold; }}
-        .controls {{ position: absolute; top: 80px; right: 20px; z-index: 100; background: rgba(255,255,255,0.9); padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }}
+        .controls {{ position: absolute; top: 80px; right: 20px; z-index: 100; background: rgba(255,255,255,0.95); padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-width: 200px; }}
         .audio-player {{ margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }}
-        button {{ background: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; }}
+        button {{ background: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; width: 100%; margin-bottom: 5px; }}
         button:hover {{ background: #2980b9; }}
+        .time-display {{ font-size: 12px; color: #666; margin-top: 5px; font-family: monospace; }}
+        .progress-bar {{ width: 100%; height: 4px; background: #ddd; border-radius: 2px; margin-top: 5px; position: relative; overflow: hidden; }}
+        .progress-fill {{ height: 100%; background: #3498db; width: 0%; transition: width 0.1s linear; }}
+        .hint {{ font-size: 11px; color: #999; margin-top: 5px; font-style: italic; }}
     </style>
 </head>
 <body>
@@ -129,9 +133,15 @@ def analyze_wav_3d(wav_path, center_freq=1500, output_html='data/05_3d_corkscrew
     </div>
     
     <div class="controls">
-        <div><small><strong>Tip:</strong> Click & Drag to Rotate | Scroll to Zoom</small></div>
+        <div><small><strong>Interactive Mode:</strong></small></div>
         <div class="audio-player">
             <button id="playBtn" onclick="toggleAudio()">▶️ Play Audio</button>
+            <button id="seekBtn" onclick="toggleSeekMode()" style="background: #27ae60;">🎯 Click to Seek</button>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+            <div class="time-display" id="timeDisplay">0.00s / {duration:.2f}s</div>
+            <div class="hint">💡 Click points to jump to that time</div>
             <audio id="audioPlayer" style="display:none;">
                 <source src="data:audio/wav;base64,{wav_b64}" type="audio/wav">
             </audio>
@@ -143,6 +153,8 @@ def analyze_wav_3d(wav_path, center_freq=1500, output_html='data/05_3d_corkscrew
     <script>
         var isRotating = false;
         var animationId = null;
+        var seekMode = true; // Start with seek mode enabled
+        var audioDuration = {duration};
 
         // Audio control
         function toggleAudio() {{
@@ -151,36 +163,146 @@ def analyze_wav_3d(wav_path, center_freq=1500, output_html='data/05_3d_corkscrew
             if (audio.paused) {{
                 audio.play();
                 btn.textContent = '⏸️ Pause Audio';
+                startProgressUpdate();
             }} else {{
                 audio.pause();
                 btn.textContent = '▶️ Play Audio';
             }}
         }}
 
-        // Auto-rotation script with interaction detection
+        function toggleSeekMode() {{
+            seekMode = !seekMode;
+            var btn = document.getElementById('seekBtn');
+            if (seekMode) {{
+                btn.textContent = '🎯 Click to Seek';
+                btn.style.background = '#27ae60';
+            }} else {{
+                btn.textContent = '🔒 Seek Disabled';
+                btn.style.background = '#95a5a6';
+            }}
+        }}
+
+        function startProgressUpdate() {{
+            var audio = document.getElementById('audioPlayer');
+            var progressBar = document.getElementById('progressBar');
+            var timeDisplay = document.getElementById('timeDisplay');
+            
+            function updateProgress() {{
+                if (!audio.paused) {{
+                    var percent = (audio.currentTime / audio.duration) * 100;
+                    progressBar.style.width = percent + '%';
+                    timeDisplay.textContent = audio.currentTime.toFixed(2) + 's / ' + audio.duration.toFixed(2) + 's';
+                    
+                    // Update playback line on plot
+                    updatePlaybackLine(audio.currentTime);
+                    
+                    requestAnimationFrame(updateProgress);
+                }}
+            }}
+            requestAnimationFrame(updateProgress);
+        }}
+
+        function updatePlaybackLine(currentTime) {{
+            var gd = document.getElementsByClassName('plotly-graph-div')[0];
+            if (!gd) return;
+            
+            // Add a vertical plane at the current time
+            var shapes = [];
+            if (currentTime > 0 && currentTime < audioDuration) {{
+                shapes.push({{
+                    type: 'mesh3d',
+                    x: [currentTime, currentTime, currentTime, currentTime],
+                    y: [-1, -1, 1, 1],
+                    z: [-1, 1, -1, 1],
+                    i: [0, 0, 1],
+                    j: [1, 2, 2],
+                    k: [2, 3, 3],
+                    opacity: 0.3,
+                    color: 'red',
+                    name: 'Playback Position'
+                }});
+            }}
+        }}
+
+        // Click handler for seeking
         var checkPlot = setInterval(function() {{
             var gd = document.getElementsByClassName('plotly-graph-div')[0];
             if (gd && gd._fullLayout) {{
                 clearInterval(checkPlot);
                 startRotation(gd);
                 setupInteractionDetection(gd);
+                setupClickSeek(gd);
             }}
         }}, 100);
 
+        function setupClickSeek(gd) {{
+            gd.on('plotly_click', function(data) {{
+                if (!seekMode) return;
+                
+                if (data.points && data.points.length > 0) {{
+                    var point = data.points[0];
+                    var clickedTime = point.x; // X-axis is time
+                    
+                    if (clickedTime >= 0 && clickedTime <= audioDuration) {{
+                        var audio = document.getElementById('audioPlayer');
+                        audio.currentTime = clickedTime;
+                        
+                        // Auto-play if not already playing
+                        if (audio.paused) {{
+                            audio.play();
+                            document.getElementById('playBtn').textContent = '⏸️ Pause Audio';
+                            startProgressUpdate();
+                        }}
+                        
+                        // Visual feedback
+                        console.log('Seeking to: ' + clickedTime.toFixed(2) + 's');
+                    }}
+                }}
+            }});
+            
+            // Highlight on hover
+            gd.on('plotly_hover', function(data) {{
+                if (!seekMode) return;
+                if (data.points && data.points.length > 0) {{
+                    var point = data.points[0];
+                    var timeDisplay = document.getElementById('timeDisplay');
+                    timeDisplay.textContent = '➤ ' + point.x.toFixed(2) + 's (click to seek)';
+                }}
+            }});
+            
+            gd.on('plotly_unhover', function() {{
+                var audio = document.getElementById('audioPlayer');
+                var timeDisplay = document.getElementById('timeDisplay');
+                timeDisplay.textContent = audio.currentTime.toFixed(2) + 's / ' + audio.duration.toFixed(2) + 's';
+            }});
+        }}
+
         function setupInteractionDetection(gd) {{
-            // Stop rotation when user interacts
+            // Stop rotation when user interacts with camera controls
             gd.on('plotly_relayout', function(eventData) {{
-                // Check if user is manually changing camera (not our auto-rotation)
+                // Only stop if it's a camera change (not our seek operation)
                 if (eventData['scene.camera'] && isRotating) {{
                     stopRotation();
                 }}
             }});
             
-            // Also stop on mouse down
-            gd.addEventListener('mousedown', function() {{
-                if (isRotating) {{
+            // Stop on drag
+            var isDragging = false;
+            gd.addEventListener('mousedown', function(e) {{
+                // Check if clicking on the 3D plot area (not the controls)
+                if (e.target.closest('.plotly-graph-div')) {{
+                    isDragging = true;
+                }}
+            }});
+            
+            gd.addEventListener('mousemove', function(e) {{
+                if (isDragging && isRotating) {{
                     stopRotation();
                 }}
+            }});
+            
+            gd.addEventListener('mouseup', function() {{
+                isDragging = false;
             }});
         }}
 
@@ -197,14 +319,13 @@ def analyze_wav_3d(wav_path, center_freq=1500, output_html='data/05_3d_corkscrew
             var t = 0;
             var radius = 1.8;
             var speed = 0.01;
-            var duration = 6.28; // One full circle (2*PI)
+            var duration = 6.28;
             var startTime = null;
             
             function animate(timestamp) {{
-                if (!isRotating) return; // Stop if user interacted
+                if (!isRotating) return;
                 
                 if (!startTime) startTime = timestamp;
-                var elapsed = (timestamp - startTime) / 1000; // Convert to seconds
                 
                 t += speed;
                 var x = radius * Math.cos(t);
@@ -219,7 +340,6 @@ def analyze_wav_3d(wav_path, center_freq=1500, output_html='data/05_3d_corkscrew
                 }}
             }}
             
-            // Start after a brief pause
             setTimeout(function() {{
                 if (isRotating) {{
                     animationId = requestAnimationFrame(animate);
