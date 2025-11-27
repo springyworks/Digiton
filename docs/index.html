@@ -16,7 +16,10 @@
         a { text-decoration: none; color: #3498db; font-weight: bold; font-size: 1.1em; }
         a:hover { text-decoration: underline; }
         .tag { display: inline-block; background: #eee; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; color: #666; margin-left: 10px; }
-        .img-preview { max-width: 100%; height: auto; margin-top: 10px; border-radius: 4px; border: 1px solid #eee; }
+        .img-preview { max-width: 100%; height: auto; margin-top: 10px; border-radius: 4px; border: 1px solid #eee; position: relative; }
+        .img-container { position: relative; display: inline-block; width: 100%; }
+        .playback-line { position: absolute; top: 0; bottom: 0; width: 2px; background: red; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 10; }
+        .playback-line.active { opacity: 0.8; }
         .audio-controls { margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; }
         .play-btn { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; margin-right: 5px; }
         .play-btn:hover { background: #2980b9; }
@@ -40,57 +43,77 @@
         <a href="01_spin_digiton_modem.png">Spin Modem Reference</a> <span class="tag">Image</span>
         <p>Spectrogram and frequency demodulation of the reference modem implementation.</p>
         <div class="audio-controls">
-            <button class="play-btn" onclick="toggleAudio('audio1', this)">▶️ Play Audio</button>
+            <button class="play-btn" onclick="toggleAudio('audio1', this, 'line1', 'img1')">▶️ Play Audio</button>
             <audio id="audio1" src="01_spin_digiton_modem.wav" preload="metadata"></audio>
             <div class="audio-info" id="info1">Click to hear the modem signal</div>
         </div>
-        <img src="01_spin_digiton_modem.png" class="img-preview" alt="Modem Reference">
+        <div class="img-container">
+            <img id="img1" src="01_spin_digiton_modem.png" class="img-preview" alt="Modem Reference">
+            <div id="line1" class="playback-line"></div>
+        </div>
     </div>
 
     <div class="card">
         <a href="02_digiton_chat_spin.png">Chat Simulation</a> <span class="tag">Image</span>
         <p>Standard chat sequence between Master, Alice, and Bob.</p>
         <div class="audio-controls">
-            <button class="play-btn" onclick="toggleAudio('audio2', this)">▶️ Play Audio</button>
+            <button class="play-btn" onclick="toggleAudio('audio2', this, 'line2', 'img2')">▶️ Play Audio</button>
             <audio id="audio2" src="02_digiton_chat_spin.wav" preload="metadata"></audio>
             <div class="audio-info" id="info2">Click to hear the chat sequence</div>
         </div>
-        <img src="02_digiton_chat_spin.png" class="img-preview" alt="Chat Simulation">
+        <div class="img-container">
+            <img id="img2" src="02_digiton_chat_spin.png" class="img-preview" alt="Chat Simulation">
+            <div id="line2" class="playback-line"></div>
+        </div>
     </div>
 
     <div class="card">
         <a href="03_digiton_adaptive_spin.png">Adaptive Speed</a> <span class="tag">Image</span>
         <p>Demonstration of speed throttling (Slow Pings vs Fast Bursts).</p>
         <div class="audio-controls">
-            <button class="play-btn" onclick="toggleAudio('audio3', this)">▶️ Play Audio</button>
+            <button class="play-btn" onclick="toggleAudio('audio3', this, 'line3', 'img3')">▶️ Play Audio</button>
             <audio id="audio3" src="03_digiton_adaptive_spin.wav" preload="metadata"></audio>
             <div class="audio-info" id="info3">Click to hear adaptive speed</div>
         </div>
-        <img src="03_digiton_adaptive_spin.png" class="img-preview" alt="Adaptive Speed">
+        <div class="img-container">
+            <img id="img3" src="03_digiton_adaptive_spin.png" class="img-preview" alt="Adaptive Speed">
+            <div id="line3" class="playback-line"></div>
+        </div>
     </div>
 
     <div class="card">
         <a href="04_digiton_party_mix_spin.png">Party Mix</a> <span class="tag">Image</span>
         <p>Mixed environment with weak/slow signals and strong/fast signals.</p>
         <div class="audio-controls">
-            <button class="play-btn" onclick="toggleAudio('audio4', this)">▶️ Play Audio</button>
+            <button class="play-btn" onclick="toggleAudio('audio4', this, 'line4', 'img4')">▶️ Play Audio</button>
             <audio id="audio4" src="04_digiton_party_mix_spin.wav" preload="metadata"></audio>
             <div class="audio-info" id="info4">Click to hear the party mix</div>
         </div>
-        <img src="04_digiton_party_mix_spin.png" class="img-preview" alt="Party Mix">
+        <div class="img-container">
+            <img id="img4" src="04_digiton_party_mix_spin.png" class="img-preview" alt="Party Mix">
+            <div id="line4" class="playback-line"></div>
+        </div>
     </div>
 
     <script>
-        function toggleAudio(audioId, btn) {
+        var currentAnimationId = null;
+        
+        function toggleAudio(audioId, btn, lineId, imgId) {
             var audio = document.getElementById(audioId);
             var info = document.getElementById('info' + audioId.slice(-1));
+            var line = document.getElementById(lineId);
+            var img = document.getElementById(imgId);
             
-            // Stop all other audio first
+            // Stop all other audio and lines
             document.querySelectorAll('audio').forEach(function(a) {
                 if (a.id !== audioId && !a.paused) {
                     a.pause();
                     a.currentTime = 0;
                 }
+            });
+            
+            document.querySelectorAll('.playback-line').forEach(function(l) {
+                l.classList.remove('active');
             });
             
             // Reset all buttons
@@ -103,18 +126,30 @@
             if (audio.paused) {
                 audio.play();
                 btn.textContent = '⏸️ Pause';
-                updateTime();
+                line.classList.add('active');
+                updatePlayback();
             } else {
                 audio.pause();
                 btn.textContent = '▶️ Play Audio';
+                line.classList.remove('active');
+                if (currentAnimationId) {
+                    cancelAnimationFrame(currentAnimationId);
+                }
             }
             
-            function updateTime() {
+            function updatePlayback() {
                 if (!audio.paused) {
+                    // Update time display
                     var current = audio.currentTime.toFixed(1);
                     var duration = audio.duration.toFixed(1);
                     info.textContent = current + 's / ' + duration + 's';
-                    requestAnimationFrame(updateTime);
+                    
+                    // Update playback line position
+                    var progress = audio.currentTime / audio.duration;
+                    var imgWidth = img.offsetWidth;
+                    line.style.left = (progress * imgWidth) + 'px';
+                    
+                    currentAnimationId = requestAnimationFrame(updatePlayback);
                 } else {
                     info.textContent = 'Click to hear the signal';
                 }
@@ -122,7 +157,11 @@
             
             audio.onended = function() {
                 btn.textContent = '▶️ Play Audio';
+                line.classList.remove('active');
                 info.textContent = 'Click to hear the signal';
+                if (currentAnimationId) {
+                    cancelAnimationFrame(currentAnimationId);
+                }
             };
         }
     </script>
