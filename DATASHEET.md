@@ -13,15 +13,17 @@ The Spin Digiton Modem is an acoustic frequency-shift communication system utili
 ### 1.1 Key Features
 - Binary FSK modulation using ±200 Hz frequency offset
 - Gaussian pulse shaping for spectral efficiency
-- I/Q demodulation for spin detection
+- I/Q demodulation (Complex Baseband) for spin detection
 - Adaptive data rate (50-200 baud)
 - Multi-access protocol support (WPP - Wavelet Party Protocol)
+- **Deep Search Mode:** Coherent integration for -60dB SNR detection
 
 ### 1.2 Target Applications
 - Acoustic data transmission
 - Low-power wireless sensor networks
 - Educational demonstration of SDR concepts
 - Near-field acoustic communication
+- **SSB Transceiver Integration:** Audio frequency offset maps directly to RF offset
 
 ---
 
@@ -63,7 +65,8 @@ The Spin Digiton Modem is an acoustic frequency-shift communication system utili
    - Local Oscillator: LO(t) = exp(-j·2π·fc·t)
    - Mixed signal: IQ(t) = s(t) × LO(t)
    - Low-pass filter: 4th order Butterworth, 500 Hz cutoff
-   - Result: Complex baseband signal with spin as frequency offset
+   - Result: Complex baseband signal ($I + jQ$) with spin as frequency offset
+   - **Note:** This representation is mathematically identical to complex-valued signal processing used in SDRs.
 
 3. **Spin Detection**
    - Instantaneous frequency: f_inst = (1/2π) × dφ/dt
@@ -95,10 +98,14 @@ The Spin Digiton Modem is an acoustic frequency-shift communication system utili
 
 | SNR (dB) | Bit Error Rate | Recommended Mode |
 |----------|----------------|------------------|
-| < -10 | > 10⁻² | Not recommended |
+| < -60 | > 10⁻¹ | Signal lost |
+| -60 to -10 | < 10⁻³ | **Deep Search Mode** (Coherent Integration) |
 | -10 to 0 | 10⁻²-10⁻³ | Slow mode (σ=20ms) |
 | 0 to 10 | 10⁻³-10⁻⁴ | Standard (σ=10-20ms) |
 | > 10 | < 10⁻⁴ | Fast mode (σ=5ms) |
+
+**Note on Deep Search Mode:**
+By utilizing coherent integration of repetitive pulse trains (similar to WSPR/JT65), the modem can achieve detection at extremely low SNR (-60dB). This "astonishing feature" allows for "ping & pong" exchanges well below the noise floor, suitable for long-range or high-interference environments.
 
 ### 4.2 Throughput
 

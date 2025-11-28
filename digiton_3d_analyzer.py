@@ -70,9 +70,9 @@ def analyze_wav_3d(wav_path, center_freq=1500, output_html='data/05_3d_corkscrew
         x=t_plot[mask],
         y=I[mask],
         z=Q[mask],
-        mode='markers',
-        marker=dict(
-            size=2,
+        mode='lines',
+        line=dict(
+            width=3,
             color=t_plot[mask],
             colorscale='Turbo',
             showscale=True,
