@@ -124,6 +124,7 @@
             });
             
             if (audio.paused) {
+                audio.volume = 0.18; // -15dB
                 audio.play();
                 btn.textContent = '⏸️ Pause';
                 line.classList.add('active');

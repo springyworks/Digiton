@@ -126,28 +126,27 @@ def simulate_party_mix():
     print("Saved audio to data/04_digiton_party_mix_spin.wav")
 
     # --- VISUALIZATION ---
-    plt.figure(figsize=(14, 8))
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
     
-    plt.subplot(2, 1, 1)
-    plt.plot(t, sig_noisy, 'k', linewidth=0.5, alpha=0.7)
-    plt.title("Party Mix: Weak/Slow Alice vs Strong/Fast Bob")
-    plt.ylabel("Amplitude")
-    plt.xlim(0, total_time)
-    plt.grid(True, alpha=0.3)
+    ax1.plot(t, sig_noisy, 'k', linewidth=0.5, alpha=0.7)
+    ax1.set_title("Party Mix: Weak/Slow Alice vs Strong/Fast Bob")
+    ax1.set_ylabel("Amplitude")
+    ax1.set_xlim(0, total_time)
+    ax1.grid(True, alpha=0.3)
     
     # Draw Slot Boundaries
     for i in range(int(total_cycles * num_slots)):
-        plt.axvline(i * slot_duration, color='g', linestyle=':', alpha=0.3)
+        ax1.axvline(i * slot_duration, color='g', linestyle=':', alpha=0.3)
 
-    plt.subplot(2, 1, 2)
     f, t_spec, Sxx = signal.spectrogram(sig_noisy, SAMPLE_RATE, nperseg=256, noverlap=128)
-    plt.pcolormesh(t_spec, f, 10 * np.log10(Sxx + 1e-10), shading='gouraud', cmap='inferno')
-    plt.ylabel('Frequency [Hz]')
-    plt.xlabel('Time (s)')
-    plt.xlim(0, total_time)
-    plt.ylim(1000, 2000)
-    plt.title("Spectrogram (Notice Alice's Faint Pulses vs Bob's Bright Bursts)")
-    plt.colorbar(label='dB')
+    pcm = ax2.pcolormesh(t_spec, f, 10 * np.log10(Sxx + 1e-10), shading='gouraud', cmap='inferno')
+    ax2.set_ylabel('Frequency [Hz]')
+    ax2.set_xlabel('Time (s)')
+    ax2.set_ylim(1000, 2000)
+    ax2.set_title("Spectrogram (Notice Alice's Faint Pulses vs Bob's Bright Bursts)")
+    plt.colorbar(pcm, ax=ax2, label='dB')
+    ax2.set_title("Spectrogram (Notice Alice's Faint Pulses vs Bob's Bright Bursts)")
+    plt.colorbar(pcm, ax=ax2, label='dB')
     
     plt.tight_layout()
     plt.savefig('data/04_digiton_party_mix_spin.png')

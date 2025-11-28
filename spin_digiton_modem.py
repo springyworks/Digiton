@@ -144,18 +144,16 @@ def simulate_spin_chat():
     print("\nSaved audio to data/01_spin_digiton_modem.wav")
 
     # --- VISUALIZATION ---
-    plt.figure(figsize=(12, 8))
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 8), sharex=True)
     
     # 1. Time Domain
-    plt.subplot(3, 1, 1)
-    plt.plot(t, rx_signal, 'k', alpha=0.7, linewidth=0.5)
-    plt.title("Spin Digiton Chat (Time Domain)")
-    plt.ylabel("Amplitude")
-    plt.xlim(0, duration)
-    plt.grid(True, alpha=0.3)
+    ax1.plot(t, rx_signal, 'k', alpha=0.7, linewidth=0.5)
+    ax1.set_title("Spin Digiton Chat (Time Domain)")
+    ax1.set_ylabel("Amplitude")
+    ax1.set_xlim(0, duration)
+    ax1.grid(True, alpha=0.3)
     
     # 2. Spectrogram
-    plt.subplot(3, 1, 2)
     f, t_spec, Sxx = signal.spectrogram(rx_signal, SAMPLE_RATE, nperseg=256, noverlap=128)
     plt.pcolormesh(t_spec, f, 10 * np.log10(Sxx + 1e-10), shading='gouraud', cmap='inferno')
     plt.ylabel('Frequency [Hz]')
@@ -165,7 +163,6 @@ def simulate_spin_chat():
     plt.colorbar(label='dB')
     
     # 3. Instantaneous Frequency (Demodulated)
-    plt.subplot(3, 1, 3)
     # Calculate freq over time for the whole signal
     # Need to smooth it or it's too noisy
     inst_phase = np.unwrap(np.angle(rx_iq))
@@ -175,16 +172,15 @@ def simulate_spin_chat():
     freq_smooth = signal.filtfilt(b, a, inst_freq)
     
     t_freq = t[1:]
-    plt.plot(t_freq, freq_smooth, 'b', linewidth=1)
-    plt.axhline(SPIN_OFFSET, color='g', linestyle='--', label='Right Spin (+200)')
-    plt.axhline(-SPIN_OFFSET, color='r', linestyle='--', label='Left Spin (-200)')
-    plt.axhline(0, color='k', alpha=0.3)
-    plt.xlim(0, duration)
-    plt.ylim(-400, 400)
-    plt.ylabel("Freq Offset (Hz)")
-    plt.xlabel("Time (s)")
-    plt.legend(loc='upper right')
-    plt.title("Demodulated Frequency (SDR View)")
+    ax3.plot(t_freq, freq_smooth, 'b', linewidth=1)
+    ax3.axhline(SPIN_OFFSET, color='g', linestyle='--', label='Right Spin (+200)')
+    ax3.axhline(-SPIN_OFFSET, color='r', linestyle='--', label='Left Spin (-200)')
+    ax3.axhline(0, color='k', alpha=0.3)
+    ax3.set_ylim(-400, 400)
+    ax3.set_ylabel("Freq Offset (Hz)")
+    ax3.set_xlabel("Time (s)")
+    ax3.legend(loc='upper right')
+    ax3.set_title("Demodulated Frequency (SDR View)")
     
     plt.tight_layout()
     plt.savefig('data/01_spin_digiton_modem.png')

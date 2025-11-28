@@ -161,6 +161,7 @@ def analyze_wav_3d(wav_path, center_freq=1500, output_html='data/05_3d_corkscrew
             var audio = document.getElementById('audioPlayer');
             var btn = document.getElementById('playBtn');
             if (audio.paused) {{
+                audio.volume = 0.18; // -15dB
                 audio.play();
                 btn.textContent = '⏸️ Pause Audio';
                 startProgressUpdate();
@@ -280,6 +281,7 @@ def analyze_wav_3d(wav_path, center_freq=1500, output_html='data/05_3d_corkscrew
                     
                     if (clickedTime >= 0 && clickedTime <= audioDuration) {{
                         var audio = document.getElementById('audioPlayer');
+                        audio.volume = 0.18; // -15dB
                         audio.currentTime = clickedTime;
                         
                         // Auto-play if not already playing
