@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from scipy import signal
 from scipy.io import wavfile
 import os
+import digiton.wavelets
+import digiton.sdr
 
 # Ensure data directory exists
 os.makedirs('data', exist_ok=True)
@@ -21,13 +23,14 @@ class SpinDigitonModem:
         Right Spin (+200Hz) -> 1700Hz
         Left Spin (-200Hz) -> 1300Hz
         """
-        # 6 sigma duration for 99.7% energy
-        t = np.linspace(-4*sigma, 4*sigma, int(8*sigma*self.fs))
-        envelope = np.exp(-t**2 / (2 * sigma**2))
-        
-        freq = CENTER_FREQ + SPIN_OFFSET if spin == 'right' else CENTER_FREQ - SPIN_OFFSET
-        
-        return envelope * np.cos(2 * np.pi * freq * t)
+        return digiton.wavelets.morlet_pulse(
+            fc_hz=CENTER_FREQ,
+            spin_offset_hz=SPIN_OFFSET,
+            sigma=sigma,
+            fs=self.fs,
+            spin=spin,
+            trunc_sigmas=4.0
+        )
 
 def simulate_chat_sequence():
     print("--- SPIN DIGITON CHAT SIMULATION ---")
@@ -99,25 +102,52 @@ def simulate_chat_sequence():
     # --- VISUALIZATION ---
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
     
-    ax1.plot(t, signal_arr, 'k', linewidth=0.5)
-    ax1.set_title("Spin Digiton Chat Sequence (Time Domain)")
+    # Plot 1: Time Domain
+    ax1.plot(t, signal_arr, color='black', alpha=0.7)
+    ax1.set_title("Time Domain: Wavelet Party Protocol (WPP)")
     ax1.set_ylabel("Amplitude")
-    ax1.set_xlim(0, total_time)
     ax1.grid(True, alpha=0.3)
     
-    # Draw Slot Boundaries
-    for i in range(int(total_cycles * num_slots)):
-        ax1.axvline(i * slot_duration, color='g', linestyle=':', alpha=0.3)
+    # Annotate Slots
+    for i in range(total_cycles):
+        base = i * cycle_duration
+        ax1.axvline(base, color='red', linestyle='--', alpha=0.5)
+        ax1.text(base + 0.02, 0.9, f"CYCLE {i+1}", color='red')
+        
+        # Master Slot
+        ax1.axvspan(base, base + slot_duration, color='red', alpha=0.1)
+        ax1.text(base + slot_duration/2, 0.5, "CQ", ha='center', color='red')
+        
+        # Alice Slot (2)
+        ax1.axvspan(base + 2*slot_duration, base + 3*slot_duration, color='blue', alpha=0.1)
+        if i >= 1:
+            ax1.text(base + 2.5*slot_duration, 0.5, "ALICE", ha='center', color='blue')
+            
+        # Bob Slot (5)
+        ax1.axvspan(base + 5*slot_duration, base + 6*slot_duration, color='green', alpha=0.1)
+        if i >= 2:
+            ax1.text(base + 5.5*slot_duration, 0.5, "BOB", ha='center', color='green')
 
-    f, t_spec, Sxx = signal.spectrogram(signal_arr, SAMPLE_RATE, nperseg=256, noverlap=128)
-    pcm = ax2.pcolormesh(t_spec, f, 10 * np.log10(Sxx + 1e-10), shading='gouraud', cmap='inferno')
-    ax2.set_ylabel('Frequency [Hz]')
-    ax2.set_xlabel('Time (s)')
+    # Plot 2: Spectrogram (Spin Detection)
+    f, t_spec, Sxx = signal.spectrogram(signal_arr, SAMPLE_RATE, nperseg=256, noverlap=200)
+    ax2.pcolormesh(t_spec, f, 10 * np.log10(Sxx + 1e-10), shading='gouraud', cmap='inferno')
     ax2.set_ylim(1000, 2000)
-    ax2.set_title("Spectrogram (Showing Spin/Frequency Shifts)")
-    plt.colorbar(pcm, ax=ax2, label='dB')
+    ax2.set_ylabel("Frequency (Hz)")
+    ax2.set_xlabel("Time (s)")
+    ax2.set_title("Spectrogram: Spin States (1700Hz = Right, 1300Hz = Left)")
+    
+    # Annotate Frequencies
+    ax2.axhline(1700, color='cyan', linestyle='--', alpha=0.5, label='Right Spin (+200Hz)')
+    ax2.axhline(1300, color='orange', linestyle='--', alpha=0.5, label='Left Spin (-200Hz)')
+    ax2.legend(loc='upper right')
     
     plt.tight_layout()
+    plt.savefig('data/02_digiton_chat_spin.png')
+    print("Saved plot to data/02_digiton_chat_spin.png")
+    # plt.show()
+
+if __name__ == "__main__":
+    simulate_chat_sequence()
     plt.savefig('data/02_digiton_chat_spin.png')
     print("Saved plot to data/02_digiton_chat_spin.png")
 

@@ -1,29 +1,33 @@
 # Spin Digiton Modem - Technical Datasheet
 
-**Version:** 1.0  
+**Version:** 2.0  
 **Date:** November 28, 2025  
 **Status:** Experimental  
+**Documentation:** MANUAL.pdf (Technical Manual & User Guide)
 
 ---
 
 ## 1. OVERVIEW
 
-The Spin Digiton Modem is an acoustic frequency-shift communication system utilizing Gaussian-windowed carrier pulses with frequency offset modulation to encode binary data as "spin" states detectable by I/Q downconversion techniques.
+The Spin Digiton Modem is an acoustic frequency-shift communication system utilizing Gaussian-windowed carrier pulses (Complex Morlet Wavelets) with frequency offset modulation to encode binary data as "spin" states detectable by I/Q downconversion techniques.
 
 ### 1.1 Key Features
-- Binary FSK modulation using ±200 Hz frequency offset
-- Gaussian pulse shaping for spectral efficiency
-- I/Q demodulation (Complex Baseband) for spin detection
-- Adaptive data rate (50-200 baud)
-- Multi-access protocol support (WPP - Wavelet Party Protocol)
-- **Deep Search Mode:** Coherent integration for -60dB SNR detection
+- **Automatic Speed Adaptation:** 5 modes from TURBO (200 baud) to DEEP (1 baud)
+- **-60dB SNR Operation:** Coherent integration (up to 1024×) for extreme weak signals
+- **Binary FSK modulation** using ±200 Hz frequency offset
+- **Complex Morlet Wavelets** with Gaussian pulse shaping
+- **I/Q demodulation** (Complex Baseband) for robust spin detection
+- **Watterson Fading Resilience** via frequency diversity
+- **Multi-access protocol** support (WPP - Wavelet Party Protocol)
+- **Real-time SNR measurement** with auto-fallback
 
 ### 1.2 Target Applications
-- Acoustic data transmission
+- Acoustic data transmission in harsh environments
+- HF radio modem (via SSB transceiver audio interface)
 - Low-power wireless sensor networks
 - Educational demonstration of SDR concepts
 - Near-field acoustic communication
-- **SSB Transceiver Integration:** Audio frequency offset maps directly to RF offset
+- **Emergency/EMCOMM:** Reliable weak-signal communication
 
 ---
 
@@ -36,9 +40,13 @@ The Spin Digiton Modem is an acoustic frequency-shift communication system utili
 | Sample Rate | fs | 8000 | 8000 | 8000 | Hz | Fixed |
 | Center Frequency | fc | 1300 | 1500 | 1700 | Hz | Audio band |
 | Spin Offset | Δf | -200 | ±200 | +200 | Hz | Binary states |
-| Pulse Width (σ) | σ | 10 | 20 | 50 | ms | Gaussian sigma |
-| Symbol Rate (Slow) | Rs_slow | 10 | 20 | 30 | baud | Standard ping |
-| Symbol Rate (Fast) | Rs_fast | 100 | 200 | 250 | baud | Burst mode |
+| Pulse Width (σ) | σ | 1 | 10 | 20 | ms | Mode-dependent |
+| Symbol Rate (TURBO) | Rs_turbo | - | 200 | - | baud | +10dB SNR |
+| Symbol Rate (FAST) | Rs_fast | - | 50 | - | baud | 0dB SNR |
+| Symbol Rate (NORMAL) | Rs_norm | - | 20 | - | baud | -10dB SNR |
+| Symbol Rate (SLOW) | Rs_slow | - | 12 | - | baud | -30dB SNR |
+| Symbol Rate (DEEP) | Rs_deep | - | 1 | - | baud | -50 to -60dB |
+| Integration Factor | N | 1 | 4-512 | 1024 | - | Mode-dependent |
 
 ### 2.2 Signal Specifications
 
@@ -73,7 +81,49 @@ The Spin Digiton Modem is an acoustic frequency-shift communication system utili
    - Weighted average: f_avg = Σ(f_inst × |IQ|²) / Σ|IQ|²
    - Decision threshold: ±50 Hz
 
-### 3.2 Protocol Layers
+## 3. FUNCTIONAL DESCRIPTION
+
+### 3.1 Modulation
+1. **Pulse Generation**
+   - Gaussian envelope: A(t) = exp(-t²/2σ²)
+   - Carrier modulation: s(t) = A(t) × cos(2πf·t)
+   - Right Spin: f = fc + Δf = 1700 Hz
+   - Left Spin: f = fc - Δf = 1300 Hz
+
+2. **I/Q Downconversion**
+   - Local Oscillator: LO(t) = exp(-j·2π·fc·t)
+   - Mixed signal: IQ(t) = s(t) × LO(t)
+   - Low-pass filter: 4th order Butterworth, 500 Hz cutoff
+   - Result: Complex baseband signal ($I + jQ$) with spin as frequency offset
+   - **Note:** This representation is mathematically identical to complex-valued signal processing used in SDRs.
+
+3. **Spin Detection**
+   - Instantaneous frequency: f_inst = (1/2π) × dφ/dt
+   - Weighted average: f_avg = Σ(f_inst × |IQ|²) / Σ|IQ|²
+   - Decision threshold: ±50 Hz
+
+### 3.2 Automatic Speed Adaptation
+
+**Speed Modes:**
+
+| Mode   | Min SNR | Pulse σ | Integration | Baud | Use Case |
+|--------|---------|---------|-------------|------|----------|
+| TURBO  | +10 dB  | 1 ms    | 1x          | 200  | Local    |
+| FAST   | 0 dB    | 4 ms    | 1x          | 50   | Good     |
+| NORMAL | -10 dB  | 10 ms   | 4x          | 20   | Average  |
+| SLOW   | -30 dB  | 15 ms   | 64x         | 12   | Weak     |
+| DEEP   | -50 dB  | 15 ms   | 512x        | 1    | Extreme  |
+
+**Protocol:**
+1. Master sends CQ (NORMAL or DEEP mode based on strategy)
+2. Station receives and measures SNR after coherent integration
+3. SNR adjusted for integration gain to get raw channel SNR
+4. Both select mode with 6dB safety margin
+5. Speed negotiated during handshake
+6. Data transfer at agreed speed
+7. Auto-fallback if errors detected
+
+### 3.3 Protocol Layers
 
 **Physical Layer (PHY)**
 - Pulse generation and detection
@@ -165,6 +215,21 @@ By utilizing coherent integration of repetitive pulse trains (similar to WSPR/JT
    - **Method:** Simultaneous transmissions in adjacent slots
    - **Pass Criteria:** Both messages decoded correctly
 
+7. **Auto-Speed Protocol Test** (`digiton_auto_speed_protocol.py`)
+   - **Purpose:** Verify automatic speed negotiation at extreme SNR
+   - **Method:**
+     - Simulate -50dB Watterson channel
+     - Master sends CQ in DEEP mode (512x coherent integration)
+     - Station measures raw channel SNR (compensating for integration gain)
+     - Both select appropriate mode with 6dB safety margin
+     - Confirm speed selection matches channel conditions
+     - Transfer test data at agreed speed
+   - **Pass Criteria:**
+     - SNR measurement within ±3dB of actual
+     - Correct mode selected (DEEP for -50dB)
+     - Successful bit detection after integration
+     - No false mode upgrades (safety margin enforced)
+
 ### 5.2 Regression Test Suite
 
 #### 5.2.1 Core Functionality
@@ -195,6 +260,17 @@ By utilizing coherent integration of repetitive pulse trains (similar to WSPR/JT
     - Verify right-hand spiral for Right Spin
     - Verify left-hand spiral for Left Spin
     - HTML playback synchronized with audio
+
+#### 5.2.4 Deep Search Mode
+12. **Low SNR Ping & Pong Test** (`digiton_deep_handshake.py`)
+    - **Purpose:** Verify coherent integration at -60dB SNR
+    - **Method:**
+      - Master sends "Ping" (Right Spin Train)
+      - Slave responds "Pong" (Left Spin Train)
+      - Add -60dB AWGN noise
+    - **Pass Criteria:**
+      - Both Ping and Pong sequences detected
+      - Correct spin identified for each train
 
 ### 5.3 Acceptance Test Procedure
 
@@ -282,15 +358,63 @@ In honor of Jean Morlet and the wavelet transform heritage:
 
 ---
 
-## 9. REVISION HISTORY
+## 9. DOCUMENTATION
 
-| Version | Date | Changes | Author |
-|---------|------|---------|--------|
-| 1.0 | 2025-11-28 | Initial datasheet | AI/User |
+### 9.1 Available Documents
+
+| Document | File | Description |
+|----------|------|-------------|
+| **Technical Manual** | MANUAL.pdf | Complete user guide with theory, API, and examples (20 pages, 5MB) |
+| **Datasheet** | DATASHEET.md | Technical specifications (this document) |
+| **Speed Adaptation Guide** | AUTO_SPEED_README.md | Auto-speed protocol details |
+| **Test Results** | TEST_RESULTS.md | Validation and performance data |
+| **Protocol Spec** | WAVELET_PARTY_PROTOCOL.md | WPP MAC layer specification |
+| **Chat History** | chat-continuation.md | Development notes and decisions |
+
+### 9.2 Visualization Files
+
+All test visualizations are in `data/` directory:
+- `01_heisenberg_digiton.png` - Concept diagram
+- `01_spin_digiton_modem.png` - Basic modem test
+- `02_digiton_chat_spin.png` - Chat protocol demo
+- `05_3d_corkscrew.png` - 3D I/Q trajectory
+- `10_deep_ping_pong_test.png` - Deep mode at -60dB
+- `11_auto_speed_protocol.png` - Speed adaptation demo
+- `15_digiton_sdr_spin.png` - I/Q processing
+- `16_digiton_spin_watterson.png` - Watterson fading test
+- `17_digiton_deep_spin.png` - Deep search mode
+
+### 9.3 Quick Start
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run basic modem test
+python3 spin_digiton_modem.py
+
+# Test auto-speed adaptation
+python3 digiton_auto_speed_protocol.py
+
+# Deep mode ping-pong at -60dB
+python3 digiton_deep_handshake.py
+
+# Generate manual PDF
+python3 generate_manual_pdf.py
+```
 
 ---
 
-## 10. CONTACT & SUPPORT
+## 10. REVISION HISTORY
+
+| Version | Date | Changes | Author |
+|---------|------|---------|--------|
+| 1.0 | 2025-11-28 | Initial datasheet | Team |
+| 2.0 | 2025-11-28 | Added auto-speed protocol, MANUAL.pdf, deep mode validation | Team |
+
+---
+
+## 11. CONTACT & SUPPORT
 
 **Repository:** https://github.com/springyworks/Digiton  
 **Documentation:** https://springyworks.github.io/Digiton/  

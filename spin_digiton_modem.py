@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from scipy import signal
 from scipy.io import wavfile
 import os
+from digiton.wavelets import morlet_pulse
+from digiton.sdr import iq_downconvert, detect_spin
 
 # Ensure data directory exists
 os.makedirs('data', exist_ok=True)
@@ -21,52 +23,15 @@ class SpinDigitonModem:
         Right Spin (+200Hz) -> 1700Hz
         Left Spin (-200Hz) -> 1300Hz
         """
-        # 6 sigma duration for 99.7% energy
-        t = np.linspace(-4*sigma, 4*sigma, int(8*sigma*self.fs))
-        envelope = np.exp(-t**2 / (2 * sigma**2))
-        
-        freq = CENTER_FREQ + SPIN_OFFSET if spin == 'right' else CENTER_FREQ - SPIN_OFFSET
-        
-        # Smooth phase transition? For single pulse, phase 0 is fine.
-        return envelope * np.cos(2 * np.pi * freq * t)
+        return morlet_pulse(CENTER_FREQ, SPIN_OFFSET, sigma, self.fs, spin=spin, trunc_sigmas=3.0)
 
     def sdr_downconvert(self, real_signal):
         """Downconvert to Baseband I/Q at CENTER_FREQ"""
-        t = np.arange(len(real_signal)) / self.fs
-        lo = np.exp(-1j * 2 * np.pi * CENTER_FREQ * t)
-        mixed = real_signal * lo
-        # Low pass filter to remove double frequency component
-        sos = signal.butter(4, 500, 'low', fs=self.fs, output='sos')
-        return signal.sosfilt(sos, mixed)
+        return iq_downconvert(np.asarray(real_signal), CENTER_FREQ, self.fs, lpf_hz=500.0)
         
     def detect_spin(self, iq_chunk):
-        """
-        Analyze I/Q chunk to determine spin direction.
-        Returns: 'right', 'left', or None
-        """
-        # Amplitude threshold
-        if np.max(np.abs(iq_chunk)) < 0.01:
-            return None, 0
-            
-        # Weighted Average Frequency
-        amp = np.abs(iq_chunk)
-        phase = np.unwrap(np.angle(iq_chunk))
-        inst_freq = np.diff(phase) / (2 * np.pi * (1/self.fs))
-        
-        # Weight frequency by amplitude squared (energy)
-        # We need to align amp with inst_freq (which is 1 sample shorter)
-        weights = amp[1:] ** 2
-        if np.sum(weights) == 0:
-            return None, 0
-            
-        avg_freq = np.average(inst_freq, weights=weights)
-        
-        if avg_freq > 50: # Threshold for +200Hz
-            return 'right', avg_freq
-        elif avg_freq < -50: # Threshold for -200Hz
-            return 'left', avg_freq
-        else:
-            return 'ambiguous', avg_freq
+        """Analyze I/Q chunk to determine spin direction."""
+        return detect_spin(np.asarray(iq_chunk), self.fs)
 
 def simulate_spin_chat():
     print("--- SPIN DIGITON MODEM SIMULATION ---")
