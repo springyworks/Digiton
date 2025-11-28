@@ -269,65 +269,6 @@ def listen_to_stream():
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python3 modem_listen.py <wav_file> | stream")
-        sys.exit(1)
-    
-    arg = sys.argv[1]
-    
-    if arg == "stream":
-        listen_to_stream()
-    else:
-        listen_to_wav(arg)
-
-def listen_to_stream():
-    """
-    Live streaming mode: Reads raw float32 audio from stdin and processes in real-time.
-    Assumes 8000 Hz, Mono, Float32 LE.
-    """
-    print("=" * 75)
-    print("WAVELET MODEM - LIVE STREAM MODE")
-    print("=" * 75)
-    print("Listening on stdin (Format: 8000Hz, Mono, Float32)...")
-    
-    if not os.path.exists(RUST_BINARY_PATH):
-        print(f"ERROR: Rust binary not found at {RUST_BINARY_PATH}")
-        return
-
-    decoder = RustDecoder(sample_rate=8000)
-    
-    # Buffer for calculating slots
-    chunk_size = 1024
-    
-    try:
-        while True:
-            # Read raw bytes from stdin
-            raw_data = sys.stdin.buffer.read(chunk_size * 4) # 4 bytes per float
-            if not raw_data:
-                break
-                
-            # Feed to Rust
-            try:
-                decoder.process.stdin.write(raw_data)
-                decoder.process.stdin.flush()
-            except BrokenPipeError:
-                break
-            
-            # Check for events
-            while decoder.events:
-                event = decoder.events.pop(0)
-                # Real-time print
-                t = event['timestamp']
-                spin = event['spin']
-                score = event['score']
-                print(f"[{t:8.3f}s] DETECT: {spin.upper()} (Score: {score:.4f})")
-                
-    except KeyboardInterrupt:
-        print("\nStopping stream...")
-    finally:
-        decoder.close()
-
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
         print("Usage: python3 modem_listen.py <wav_file>")
         sys.exit(1)
     
