@@ -19,3 +19,6 @@ data/*.png
 # VS Code
 .vscode/
 .history/
+
+# Legacy
+legacy/
