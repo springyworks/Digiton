@@ -115,7 +115,21 @@ def main(stdscr, args):
             pass  # Log handled by protocol
             
         # RX: Queue for main thread
-        rx_queue.put(indata.copy())
+        # If sim_delay_ms > 0, the protocol handles it internally via delay_line
+        # BUT wait, the protocol's delay_line is only used if we call process_audio with it?
+        # Actually, WPP protocol class has a delay_line but it's not automatically applied to input
+        # unless we use it. Let's check WPP implementation.
+        # The WPP class has self.delay_line.
+        # But process_audio just takes 'samples'.
+        # We need to apply delay here if args.delay > 0.
+        
+        rx_data = indata.flatten()
+        
+        # Apply simulated delay if configured
+        if config.sim_delay_ms > 0:
+            rx_data = protocol.delay_line.process(rx_data)
+            
+        rx_queue.put(rx_data)
         
         # TX: Drain queue to buffer
         try:
@@ -140,14 +154,23 @@ def main(stdscr, args):
     
     # Capture protocol logs (disable console output, TUI only)
     import logging
+    from logging.handlers import RotatingFileHandler
+    
     class TUILogHandler(logging.Handler):
         def emit(self, record):
             msg = f"{time.strftime('%H:%M:%S')} {record.getMessage()}"
             log_lines.append(msg)
     
+    # Setup File Logging
+    log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../logs'))
+    os.makedirs(log_dir, exist_ok=True)
+    file_handler = RotatingFileHandler(os.path.join(log_dir, 'wpp_echo.log'), maxBytes=5*1024*1024, backupCount=1)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s | %(message)s'))
+    
     wpp_logger = logging.getLogger("WPP")
     wpp_logger.handlers.clear()  # Remove default console handler
     wpp_logger.addHandler(TUILogHandler())
+    wpp_logger.addHandler(file_handler) # Add file handler
     wpp_logger.setLevel(logging.INFO)
     wpp_logger.propagate = False  # Don't propagate to root logger
     
@@ -184,6 +207,10 @@ def main(stdscr, args):
             
             if key in (ord('q'), ord('Q'), 27):  # q, Q, or ESC
                 running = False
+            elif key == ord('c'):
+                # Send a chat message to self
+                protocol.tx_chat_queue.put(f"HELLO SELF {int(time.time())%1000}")
+                log_lines.append("[CHAT] Sent: HELLO SELF")
             elif key == ord('+'):
                 config.sim_delay_ms = min(1000, config.sim_delay_ms + 50)
                 protocol.delay_line.set_delay_ms(config.sim_delay_ms)
@@ -345,7 +372,7 @@ def draw_ui(stdscr, protocol, config, log_lines):
                 pass
     
     # Help (truncate to terminal width to avoid curses ERR)
-    help_str = " q:Quit  +/-:Delay  a:AutoMode  m:Monitor  1-5:ForceMode "
+    help_str = " q:Quit  c:Chat  +/-:Delay  a:AutoMode  m:Monitor  1-5:ForceMode "
     try:
         if h > 0:
             stdscr.addstr(h-1, 0, help_str[:max(0, w-1)], curses.color_pair(1) | curses.A_DIM)

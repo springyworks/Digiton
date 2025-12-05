@@ -59,3 +59,23 @@ python3 apps/real_echo_test.py
 *   **No Detection**:
     *   Check volume levels. The WebSDR audio should be loud enough but not clipping.
     *   Check frequency alignment. If the WebSDR is off by >50Hz, detection might fail (though Morlet is robust).
+
+## Running the WPP TUI (Wavelet Party Protocol)
+
+To run the full interactive chat and protocol application:
+
+```bash
+python3 apps/run_wpp_tui.py
+```
+
+### TUI Controls
+*   `c`: Enter chat mode (type message, Enter to send).
+*   `1-5`: Send manual test tones.
+*   `a`: Toggle Autonomous Mode (auto-discovery and keep-alive).
+*   `m`: Toggle Monitor Mode (unmute RX audio).
+*   `q`: Quit.
+
+### Audio Routing for WPP
+Just like the echo test, you need to route the audio using `pavucontrol`:
+1.  **Playback**: Route to your **Radio Interface** (USB Audio Codec).
+2.  **Recording**: Route from **Monitor of Browser Audio** (WebSDR output).

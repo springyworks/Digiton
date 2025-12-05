@@ -721,15 +721,10 @@ class WaveletPartyProtocol:
                 # ALE-style CQ/DE exchange (once per connection)
                 self._do_ale_exchange()
                 
-                # Autonomous heartbeat messages for link validation
+                # Autonomous timestamp broadcast - party protocol: all4one, one4all
                 if now >= self._next_heartbeat_ts:
-                    try:
-                        self.tx_chat_queue.put_nowait("HB")
-                        logger.info("HEARTBEAT TX")
-                        self._send_chat_burst_if_any()
-                    except Exception:
-                        pass
-                    self._next_heartbeat_ts = now + random.uniform(5.0, 12.0)
+                    self._broadcast_party_timestamp()
+                    self._next_heartbeat_ts = now + random.uniform(3.0, 8.0)  # More frequent for party
 
     def _update_auto_mode(self):
         """
@@ -931,6 +926,30 @@ class WaveletPartyProtocol:
             # Initiator considers exchange complete after CQ (responder's DE will come)
             self._ale_exchange_complete = True
             logger.info(f"ALE: Exchange complete ({self.config.callsign} initiator)")
+
+    def _broadcast_party_timestamp(self):
+        """Broadcast timestamp to all peers - party protocol style.
+        
+        Format: [callsign] @HH:MM:SS.mmm UTC -> ALL
+        
+        This creates a mesh of synchronized time awareness.
+        All stations hear all timestamps - true party protocol: all4one, one4all.
+        """
+        from datetime import datetime
+        
+        # Generate UTC timestamp with milliseconds
+        utc_now = datetime.utcnow()
+        ts_str = utc_now.strftime("%H:%M:%S.") + f"{utc_now.microsecond // 1000:03d}"
+        
+        # Party broadcast message
+        party_msg = f"[{self.config.callsign}] @{ts_str} UTC -> ALL"
+        
+        try:
+            self.tx_chat_queue.put_nowait(party_msg)
+            logger.info(f"PARTY TX: {party_msg}")
+            self._send_chat_burst_if_any()
+        except Exception:
+            pass
 
     def _send_chat_burst_if_any(self):
         """Placeholder: when connected, send a short audible burst to mark chat data.

@@ -41,6 +41,8 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict
 from enum import Enum
+import logging
+from logging.handlers import RotatingFileHandler
 
 # Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
@@ -75,7 +77,7 @@ class SimConfig:
     
     # Detection
     snr_threshold_db: float = 18.0     # Min SNR for valid detection
-    debounce_ms: float = 300.0         # Min time between detections
+    debounce_ms: float = 2000.0        # Min time between detections (increased to prevent noise spam)
 
 # ============================================================================
 # Frequency Bank
@@ -234,16 +236,40 @@ class RealEchoTestV2:
         self.stats = {
             'tx_count': 0,
             'rx_count': 0,
+            'success_count': 0,
             'detections': deque(maxlen=20),  # Last 20 detections
             'rms_history': deque(maxlen=100),
         }
+        self.cycle_verified = False
         
         # Log buffer for TUI
         self.log_lines = deque(maxlen=15)
         
+        # Setup Logging
+        self._setup_logging()
+
+    def _setup_logging(self):
+        log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../logs'))
+        os.makedirs(log_dir, exist_ok=True)
+        log_file = os.path.join(log_dir, 'echo_test.log')
+        
+        self.file_logger = logging.getLogger("EchoTest")
+        self.file_logger.setLevel(logging.INFO)
+        self.file_logger.handlers = []
+        
+        # 5MB limit, keep 1 backup
+        handler = RotatingFileHandler(log_file, maxBytes=5*1024*1024, backupCount=1)
+        formatter = logging.Formatter('%(asctime)s | %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+        handler.setFormatter(formatter)
+        
+        self.file_logger.addHandler(handler)
+        self.file_logger.info("=== Echo Test Session Started ===")
+        
     def log(self, msg: str):
         ts = time.strftime('%H:%M:%S')
         self.log_lines.append(f"{ts} {msg}")
+        if hasattr(self, 'file_logger'):
+            self.file_logger.info(msg)
         
     def _generate_tx_signal(self, freq_offset: float) -> np.ndarray:
         """Generate a deep-mode ping sequence at given frequency offset."""
@@ -260,10 +286,14 @@ class RealEchoTestV2:
         if status:
             self.log(f"Stream: {status}")
             
-        # RX: Apply simulated delay
+        # RX: Apply simulated delay ONLY if configured
         raw_in = indata.flatten()
-        delayed = self.delay_line.process(raw_in)
-        self.rx_queue.put(delayed)
+        if self.sim_cfg.rx_delay_ms > 0:
+            delayed = self.delay_line.process(raw_in)
+            self.rx_queue.put(delayed)
+        else:
+            # Direct pass-through for Real World Testing
+            self.rx_queue.put(raw_in)
         
         # TX
         try:
@@ -317,6 +347,10 @@ class RealEchoTestV2:
         # Valid detection
         self.last_detection_ts = now
         self.stats['rx_count'] += 1
+        
+        if not self.cycle_verified:
+            self.stats['success_count'] += 1
+            self.cycle_verified = True
         
         # Spin analysis
         spin_dir, spin_freq = self.freq_bank.analyze_spin(
@@ -373,6 +407,7 @@ class RealEchoTestV2:
             
             # TX in Slot 0
             if new_slot == 0:
+                self.cycle_verified = False
                 # Choose frequency offset (cycle through them for testing)
                 offsets = self.freq_bank.freq_offsets
                 self.current_tx_freq_offset = offsets[self.stats['tx_count'] % len(offsets)]
@@ -427,6 +462,16 @@ class RealEchoTestV2:
                     # Threshold adjust
                     self.sim_cfg.snr_threshold_db = (self.sim_cfg.snr_threshold_db + 3) % 36
                     self.log(f"[DEV] SNR Thresh: {self.sim_cfg.snr_threshold_db:.0f}dB")
+                elif key == ord('p'):
+                    # Increase pings per sequence (Nasty SNR mode)
+                    self.slot_cfg.deep_pings = min(16, self.slot_cfg.deep_pings + 1)
+                    self.freq_bank = FrequencyBank(self.slot_cfg, self.fs) # Rebuild templates
+                    self.log(f"[CFG] Pings/Seq -> {self.slot_cfg.deep_pings} (Better SNR)")
+                elif key == ord('P'):
+                    # Decrease pings per sequence
+                    self.slot_cfg.deep_pings = max(1, self.slot_cfg.deep_pings - 1)
+                    self.freq_bank = FrequencyBank(self.slot_cfg, self.fs) # Rebuild templates
+                    self.log(f"[CFG] Pings/Seq -> {self.slot_cfg.deep_pings}")
                     
                 # Draw
                 self._draw_tui(stdscr)
@@ -465,7 +510,11 @@ class RealEchoTestV2:
                 stdscr.addstr(f" {freq_str} ", curses.color_pair(1))
                 
         # Stats
-        stdscr.addstr(6, 2, f"TX: {self.stats['tx_count']} | RX: {self.stats['rx_count']}", curses.color_pair(5))
+        tx = self.stats['tx_count']
+        rx = self.stats['rx_count']
+        success = self.stats['success_count']
+        rate = (success / tx * 100.0) if tx > 0 else 0.0
+        stdscr.addstr(6, 2, f"TX: {tx} | RX: {rx} | Success: {rate:.1f}% | Pings/Seq: {self.slot_cfg.deep_pings}", curses.color_pair(5))
         
         # Recent Detections
         stdscr.addstr(8, 2, "Recent:", curses.color_pair(5))
@@ -477,13 +526,21 @@ class RealEchoTestV2:
         
         # Logs
         log_y = h - len(self.log_lines) - 2
-        stdscr.addstr(log_y - 1, 0, "─" * w, curses.color_pair(1))
+        if log_y - 1 >= 0 and log_y - 1 < h:
+            try:
+                stdscr.addstr(log_y - 1, 0, "─" * (w - 1), curses.color_pair(1))
+            except curses.error:
+                pass
+                
         for i, line in enumerate(self.log_lines):
-            if log_y + i < h - 1:
-                stdscr.addstr(log_y + i, 1, line[:w-2])
+            if log_y + i < h - 1 and log_y + i >= 0:
+                try:
+                    stdscr.addstr(log_y + i, 1, line[:w-2])
+                except curses.error:
+                    pass
                 
         # Help
-        stdscr.addstr(h-1, 0, " q:Quit  +/-:Delay  a:AutoDelay  t:Threshold ", curses.color_pair(1) | curses.A_DIM)
+        stdscr.addstr(h-1, 0, " q:Quit  +/-:Delay  a:AutoDelay  t:Threshold  p/P:Pings(SNR) ", curses.color_pair(1) | curses.A_DIM)
         
         stdscr.refresh()
 
@@ -492,7 +549,8 @@ class RealEchoTestV2:
 # ============================================================================
 def main():
     slot_cfg = SlotConfig()
-    sim_cfg = SimConfig(rx_delay_ms=0.0, auto_delay=True)
+    # Default to NO SIMULATION for real-world testing
+    sim_cfg = SimConfig(rx_delay_ms=0.0, auto_delay=False)
     
     app = RealEchoTestV2(slot_cfg, sim_cfg)
     curses.wrapper(app.run_tui)

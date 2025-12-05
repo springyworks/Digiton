@@ -1,0 +1,79 @@
+2025-12-05 19:29:14 | === Echo Test Session Started ===
+2025-12-05 19:29:15 | RX Slot01 | Δf=-100Hz SNR=37.4dB | Spin=ambiguous(-6Hz)
+2025-12-05 19:29:17 | RX Slot05 | Δf=+100Hz SNR=148.6dB | Spin=ambiguous(-30Hz)
+2025-12-05 19:29:19 | RX Slot09 | Δf=+100Hz SNR=151.7dB | Spin=ambiguous(9Hz)
+2025-12-05 19:29:21 | RX Slot13 | Δf=+100Hz SNR=151.1dB | Spin=ambiguous(-27Hz)
+2025-12-05 19:29:22 | TX Slot00 | Δf=-200Hz
+2025-12-05 19:29:23 | RX Slot01 | Δf=+100Hz SNR=148.8dB | Spin=ambiguous(-43Hz)
+2025-12-05 19:29:25 | RX Slot05 | Δf=+100Hz SNR=153.2dB | Spin=ambiguous(6Hz)
+2025-12-05 19:29:27 | RX Slot09 | Δf=+100Hz SNR=148.1dB | Spin=ambiguous(-21Hz)
+2025-12-05 19:29:29 | RX Slot13 | Δf=+100Hz SNR=155.3dB | Spin=ambiguous(-8Hz)
+2025-12-05 19:29:30 | TX Slot00 | Δf=-100Hz
+2025-12-05 19:29:31 | RX Slot01 | Δf=+100Hz SNR=150.5dB | Spin=ambiguous(-19Hz)
+2025-12-05 19:29:33 | RX Slot05 | Δf=+100Hz SNR=153.4dB | Spin=ambiguous(12Hz)
+2025-12-05 19:29:35 | RX Slot09 | Δf=+100Hz SNR=155.1dB | Spin=ambiguous(-20Hz)
+2025-12-05 19:29:37 | RX Slot13 | Δf=+100Hz SNR=142.2dB | Spin=ambiguous(-47Hz)
+2025-12-05 19:29:38 | TX Slot00 | Δf=+0Hz
+2025-12-05 19:29:39 | RX Slot01 | Δf=+100Hz SNR=153.0dB | Spin=ambiguous(-33Hz)
+2025-12-05 19:29:41 | RX Slot05 | Δf=+100Hz SNR=149.6dB | Spin=ambiguous(-19Hz)
+2025-12-05 19:29:43 | RX Slot09 | Δf=+100Hz SNR=147.9dB | Spin=ambiguous(-23Hz)
+2025-12-05 19:29:45 | RX Slot13 | Δf=+100Hz SNR=151.4dB | Spin=ambiguous(-23Hz)
+2025-12-05 19:29:46 | TX Slot00 | Δf=+100Hz
+2025-12-05 19:29:47 | RX Slot01 | Δf=+100Hz SNR=147.6dB | Spin=ambiguous(4Hz)
+2025-12-05 19:29:49 | RX Slot05 | Δf=+100Hz SNR=154.6dB | Spin=ambiguous(-14Hz)
+2025-12-05 19:29:51 | RX Slot09 | Δf=+100Hz SNR=153.4dB | Spin=ambiguous(-8Hz)
+2025-12-05 19:29:53 | RX Slot13 | Δf=+100Hz SNR=138.2dB | Spin=ambiguous(-33Hz)
+2025-12-05 19:29:54 | TX Slot00 | Δf=+200Hz
+2025-12-05 19:29:55 | RX Slot01 | Δf=+100Hz SNR=151.3dB | Spin=ambiguous(15Hz)
+2025-12-05 19:29:57 | RX Slot05 | Δf=+100Hz SNR=152.6dB | Spin=ambiguous(3Hz)
+2025-12-05 19:29:59 | RX Slot09 | Δf=+100Hz SNR=152.2dB | Spin=ambiguous(-12Hz)
+2025-12-05 19:30:01 | RX Slot13 | Δf=+100Hz SNR=151.5dB | Spin=ambiguous(23Hz)
+2025-12-05 19:30:02 | TX Slot00 | Δf=-200Hz
+2025-12-05 19:30:03 | RX Slot01 | Δf=+100Hz SNR=147.5dB | Spin=ambiguous(-25Hz)
+2025-12-05 19:30:05 | RX Slot05 | Δf=+100Hz SNR=150.3dB | Spin=ambiguous(-28Hz)
+2025-12-05 19:30:07 | RX Slot09 | Δf=+100Hz SNR=152.9dB | Spin=ambiguous(9Hz)
+2025-12-05 19:30:09 | RX Slot13 | Δf=+100Hz SNR=154.1dB | Spin=ambiguous(4Hz)
+2025-12-05 19:32:43 | === Echo Test Session Started ===
+2025-12-05 19:32:44 | RX Slot02 | Δf=-100Hz SNR=97.5dB | Spin=?
+2025-12-05 19:32:46 | RX Slot06 | Δf=+100Hz SNR=157.8dB | Spin=?
+2025-12-05 19:32:48 | RX Slot11 | Δf=-100Hz SNR=151.7dB | Spin=?
+2025-12-05 19:32:50 | RX Slot15 | Δf=+100Hz SNR=157.0dB | Spin=?
+2025-12-05 19:32:51 | TX Slot00 | Δf=-200Hz
+2025-12-05 19:32:53 | RX Slot03 | Δf=-100Hz SNR=152.2dB | Spin=?
+2025-12-05 19:32:55 | RX Slot07 | Δf=-200Hz SNR=156.1dB | Spin=?
+2025-12-05 19:32:57 | RX Slot11 | Δf=+100Hz SNR=149.3dB | Spin=?
+2025-12-05 19:32:59 | RX Slot15 | Δf=+100Hz SNR=149.6dB | Spin=?
+2025-12-05 19:32:59 | TX Slot00 | Δf=-100Hz
+2025-12-05 19:33:01 | RX Slot03 | Δf=+100Hz SNR=158.3dB | Spin=?
+2025-12-05 19:33:03 | RX Slot07 | Δf=-100Hz SNR=158.5dB | Spin=?
+2025-12-05 19:33:05 | RX Slot11 | Δf=+100Hz SNR=156.0dB | Spin=?
+2025-12-05 19:33:07 | RX Slot15 | Δf=+100Hz SNR=152.7dB | Spin=?
+2025-12-05 19:33:07 | TX Slot00 | Δf=+0Hz
+2025-12-05 19:33:09 | RX Slot03 | Δf=+100Hz SNR=158.3dB | Spin=?
+2025-12-05 19:33:11 | RX Slot07 | Δf=-200Hz SNR=156.5dB | Spin=?
+2025-12-05 19:33:13 | RX Slot11 | Δf=-100Hz SNR=153.4dB | Spin=?
+2025-12-05 19:33:15 | RX Slot15 | Δf=+100Hz SNR=155.6dB | Spin=?
+2025-12-05 19:33:15 | TX Slot00 | Δf=+100Hz
+2025-12-05 19:33:17 | RX Slot03 | Δf=+100Hz SNR=151.7dB | Spin=?
+2025-12-05 19:33:19 | RX Slot07 | Δf=+100Hz SNR=153.3dB | Spin=?
+2025-12-05 19:33:21 | RX Slot11 | Δf=+100Hz SNR=161.4dB | Spin=?
+2025-12-05 19:33:23 | RX Slot15 | Δf=+100Hz SNR=151.8dB | Spin=?
+2025-12-05 19:33:23 | TX Slot00 | Δf=+200Hz
+2025-12-05 19:33:25 | RX Slot03 | Δf=-100Hz SNR=149.5dB | Spin=?
+2025-12-05 19:33:27 | RX Slot07 | Δf=+100Hz SNR=155.5dB | Spin=?
+2025-12-05 19:33:29 | RX Slot11 | Δf=+100Hz SNR=154.8dB | Spin=?
+2025-12-05 19:33:31 | RX Slot15 | Δf=+100Hz SNR=156.2dB | Spin=?
+2025-12-05 19:33:31 | TX Slot00 | Δf=-200Hz
+2025-12-05 19:33:33 | RX Slot03 | Δf=-100Hz SNR=150.6dB | Spin=?
+2025-12-05 19:33:35 | RX Slot07 | Δf=+100Hz SNR=151.1dB | Spin=?
+2025-12-05 19:33:37 | RX Slot11 | Δf=+100Hz SNR=152.7dB | Spin=?
+2025-12-05 19:33:39 | RX Slot15 | Δf=-100Hz SNR=151.8dB | Spin=?
+2025-12-05 19:33:39 | TX Slot00 | Δf=-100Hz
+2025-12-05 19:33:41 | RX Slot03 | Δf=+100Hz SNR=153.2dB | Spin=?
+2025-12-05 19:33:43 | RX Slot07 | Δf=+100Hz SNR=154.7dB | Spin=?
+2025-12-05 19:33:45 | RX Slot11 | Δf=-100Hz SNR=160.2dB | Spin=?
+2025-12-05 19:33:47 | RX Slot15 | Δf=+100Hz SNR=154.3dB | Spin=?
+2025-12-05 19:33:47 | TX Slot00 | Δf=+0Hz
+2025-12-05 19:33:49 | RX Slot03 | Δf=+100Hz SNR=154.8dB | Spin=?
+2025-12-05 19:33:51 | RX Slot07 | Δf=+100Hz SNR=151.1dB | Spin=?
+2025-12-05 19:33:53 | RX Slot11 | Δf=-200Hz SNR=157.0dB | Spin=?

@@ -64,6 +64,51 @@ def draw_vu_meter(stdscr, y, x, width, rms_val):
         
     stdscr.addstr(y, x, f"[{bar}] {db:.1f} dB", color)
 
+def draw_grid_overlay(stdscr):
+    """Draws a checkerboard indexing grid for usability testing."""
+    h, w = stdscr.getmaxyx()
+    
+    # Grid settings
+    col_width = 10
+    row_height = 5
+    
+    # Draw vertical lines and top labels
+    for x in range(0, w, col_width):
+        col_idx = x // col_width
+        # Generate column label (A, B, ..., Z, AA, AB...)
+        if col_idx < 26:
+            label = chr(65 + col_idx)
+        else:
+            label = chr(65 + (col_idx // 26) - 1) + chr(65 + (col_idx % 26))
+            
+        try:
+            # Draw label on top row
+            stdscr.addstr(0, x, label, curses.color_pair(4) | curses.A_BOLD)
+            # Draw vertical guide dots
+            for y in range(1, h):
+                if y % row_height == 0:
+                    stdscr.addch(y, x, '+', curses.color_pair(4) | curses.A_DIM)
+                else:
+                    stdscr.addch(y, x, '·', curses.color_pair(4) | curses.A_DIM)
+        except curses.error:
+            pass
+
+    # Draw horizontal lines and left labels
+    for y in range(0, h, row_height):
+        row_idx = (y // row_height) + 1
+        label = str(row_idx)
+        try:
+            # Draw label on left column
+            stdscr.addstr(y, 0, label, curses.color_pair(4) | curses.A_BOLD)
+            # Draw horizontal guide dots
+            for x in range(1, w):
+                if x % col_width == 0:
+                    pass # Already handled by vertical loop
+                else:
+                    stdscr.addch(y, x, '·', curses.color_pair(4) | curses.A_DIM)
+        except curses.error:
+            pass
+
 def main(stdscr):
     # Curses Setup
     curses.curs_set(0)
@@ -156,6 +201,7 @@ def main(stdscr):
     noise_level = 0.0  # Injected Gaussian noise amplitude into RX path
     spin_cycle = ['center', 'left', 'right']
     spin_idx = 0
+    show_grid = False # Toggle for usability grid overlay
 
     def callback(indata, outdata, frames, time_info, status):
         nonlocal tx_buffer, tune_phase, noise_level
@@ -298,6 +344,9 @@ def main(stdscr):
                 protocol.config.auto_latency = False
                 protocol.config.remote_latency_ms = max(0, protocol.config.remote_latency_ms - 100)
                 logger.info(f"[DEV] Latency: {protocol.config.remote_latency_ms}ms (Auto-Latency Disabled)")
+            elif key == ord('g'):
+                show_grid = not show_grid
+                logger.info(f"[UI] Grid Overlay: {'ON' if show_grid else 'OFF'}")
 
             # Process Logs (and mirror to aggregated logfile)
             try:
@@ -393,13 +442,16 @@ def main(stdscr):
             # Help bar at bottom (2 rows)
             if h > 2:
                 help_text1 = "q quit | t tune | 1-5 tone | s spin | [/] mode +/- | m monitor | a auto | c chat"
-                help_text2 = "+/- latency | n/N noise +/- | pipewire multi-instance | state: LISTEN/DISCOVER/CONNECT"
+                help_text2 = "+/- latency | n/N noise +/- | g grid | state: LISTEN/DISCOVER/CONNECT"
                 try:
                     stdscr.addstr(h-2, 0, help_text1.ljust(w-1)[:w-1], curses.color_pair(1) | curses.A_DIM)
                     stdscr.addstr(h-1, 0, help_text2.ljust(w-1)[:w-1], curses.color_pair(1) | curses.A_DIM)
                 except curses.error:
                     pass
             
+            if show_grid:
+                draw_grid_overlay(stdscr)
+
             stdscr.refresh()
             time.sleep(0.05)
             
