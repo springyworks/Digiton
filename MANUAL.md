@@ -114,6 +114,23 @@ To operate at **-60dB SNR**, the modem employs **Coherent Integration**. Instead
 
 For $N=256$, the gain is $\approx 24$ dB, allowing a -60dB signal to be detected as if it were -36dB (which is then further enhanced by the matched filter processing gain).
 
+### 2.3 Multiple Access Schemes (TDMA & FDMA)
+
+The Digiton system uses a hybrid approach to allow multiple users to share the channel.
+
+#### 2.3.1 TDMA (Time-Division Multiple Access)
+The **Wavelet Party Protocol (WPP)** divides time into **8 Slots** per cycle.
+*   **Slot 0**: Reserved for the **Initiator** (Host) to send the `WWBEAT` (Timing Reference).
+*   **Slots 1-7**: Reserved for **Responders** (Guests) to transmit data.
+This ensures collision avoidance and allows the Initiator to listen for new users during Slots 1-7 ("Half-Full Break-in").
+
+#### 2.3.2 FDMA (Frequency-Division Multiple Access)
+The **Spin Digiton** modulation inherently uses frequency diversity:
+*   **Modulation**: Data is encoded by shifting frequency by ±200Hz (Spin).
+*   **Frequency Banks**: The receiver can monitor multiple center frequencies simultaneously, allowing multiple independent "Parties" to coexist within the same 3kHz SSB bandwidth.
+
+*For a detailed technical explanation, see [docs/PROTOCOL_ACCESS_SCHEMES.md](docs/PROTOCOL_ACCESS_SCHEMES.md).*
+
 ---
 
 ## 3. Use Cases & Operational Scenarios

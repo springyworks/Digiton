@@ -9,6 +9,11 @@ Digiton is a Python-based software modem and protocol suite designed for robust 
 Project documentation is available on GitHub Pages:
 [https://springyworks.github.io/Digiton/](https://springyworks.github.io/Digiton/)
 
+*   [**Manual**](MANUAL.md): User guide and technical details.
+*   [**Real World Testing**](REAL_WORLD_TESTING.md): Guide for WebSDR echo tests.
+*   [**Protocol Access Schemes**](docs/PROTOCOL_ACCESS_SCHEMES.md): Detailed explanation of TDMA (Slots) and FDMA (Spin/Banks).
+*   [**Architecture Decision**](docs/WHY_MORLET_VS_CHIRP.md): Why we use Morlet Wavelets instead of Chirps (Break-in, Doppler, etc.).
+
 ## Project Structure
 
 - `digiton/`: Core library containing the modem, protocol, and channel simulation logic.
