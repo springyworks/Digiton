@@ -211,6 +211,9 @@ class WaveletPartyProtocol:
         
         # Detection History (for correlation across cycles)
         self.detection_log = []
+        
+        # Lighthouse Beacon Counter
+        self._cycle_count = 0
 
     def process_audio(self, audio_chunk: np.ndarray):
         """
@@ -807,6 +810,7 @@ class WaveletPartyProtocol:
         
         # Initiator Logic - TX on slot 0
         if slot_idx == 0:
+            self._cycle_count += 1
             if self.state in [ProtocolState.DISCOVERY_TX, ProtocolState.IDLE, ProtocolState.LISTENING]:
                 # Use gapped pings for DEEP/RESCUE to allow mid-train pong
                 if self.mode in [ProtocolMode.DEEP, ProtocolMode.RESCUE]:
@@ -835,7 +839,16 @@ class WaveletPartyProtocol:
         Adaptive CQ transmission based on current mode and peer state.
         Generates appropriate ping sequence for current speed mode.
         """
-        params = MODE_PARAMS[self.mode]
+        # === Lighthouse Beacon Logic ===
+        # If in fast mode, periodically send a DEEP sequence to allow weak stations to detect us.
+        # Every 10th cycle (approx every 3-5 seconds in Turbo mode)
+        is_lighthouse = False
+        if self.mode in [ProtocolMode.TURBO, ProtocolMode.FAST] and (self._cycle_count % 10 == 0):
+            params = MODE_PARAMS[ProtocolMode.DEEP]
+            is_lighthouse = True
+            logger.info("LIGHTHOUSE BEACON: Forcing DEEP sequence for discovery")
+        else:
+            params = MODE_PARAMS[self.mode]
         
         # Choose frequency slot based on peer feedback or cycle through
         # For echo test: use center. For diversity: rotate.

@@ -58,7 +58,7 @@ python3 run_tests.py
 
 | Test Script | Description | Critical Check |
 | :--- | :--- | :--- |
-| `tests/experiments/test_wpp.py` | **Protocol Stress Test**. Simulates a full handshake at **-60 dB SNR**. | Must detect `WWBEAT` and establish link. |
+| `tests/experiments/test_wpp.py` | **Protocol Stress Test**. Simulates a full handshake at **-60 dB SNR**. | Must detect `WWBEAT` and establish link. *(Note: Requires real-time sync)* |
 | `tests/experiments/test_physics.py` | **Physics Verification**. Checks Heisenberg uncertainty limits and wavelet properties. | Must validate time-frequency constraints. |
 | `tests/experiments/test_hf_channel.py` | **Channel Simulator**. Verifies the Watterson channel model implementation. | Must generate valid fading profiles. |
 
@@ -69,7 +69,18 @@ python3 tests/experiments/test_wpp.py
 # etc...
 ```
 
-## 3. Release Checklist
+## 3. Speed Adaptation & Discovery Strategy
+
+### The "Ultra-Mode" Dilemma
+When the modem operates in `TURBO` or `FAST` mode (high SNR, short pings), the signal energy is low. A distant, weak station (which requires `DEEP` mode integration) would normally fail to detect these fast pings, making the Initiator "invisible" to new, weak peers.
+
+### Solution: Lighthouse Beacons
+To solve this, the protocol implements a **Lighthouse Strategy**:
+- Even when in `TURBO` or `FAST` mode, the Initiator periodically (e.g., every 10th cycle) transmits a **DEEP Mode Sequence**.
+- This high-energy, repeated sequence acts as a beacon, allowing weak stations to detect the grid and request a speed downgrade or announce their presence.
+- **Status**: Implemented in `digiton/protocol/wpp.py`.
+
+## 4. Release Checklist
 
 Before marking a version as stable:
 
